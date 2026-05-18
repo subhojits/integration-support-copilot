@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Integration Support Copilot</title>
+
+    <style>
+        :root {
+            --bg: #eef4fb;
+            --surface: rgba(255, 255, 255, 0.88);
+            --surface-solid: #ffffff;
+            --primary: #0a6ed1;
+            --primary-dark: #074f9c;
+            --primary-soft: #e8f2ff;
+            --text: #102a43;
+            --muted: #52667a;
+            --border: rgba(15, 23, 42, 0.10);
+            --shadow: 0 24px 70px rgba(15, 23, 42, 0.12);
+            --shadow-soft: 0 12px 34px rgba(15, 23, 42, 0.08);
+            --success: #107e3e;
+            --success-soft: #e8f7ee;
+            --warning: #b86e00;
+            --warning-soft: #fff4df;
+            --danger: #bb0000;
+            --danger-soft: #ffe7e7;
+            --violet: #5d36c7;
+            --violet-soft: #f0eaff;
+            --radius-xl: 30px;
+            --radius-lg: 24px;
+            --radius-md: 18px;
+            --radius-sm: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", Inter, Arial, sans-serif;
+            color: var(--text);
+            background:
+                    radial-gradient(circle at top left, rgba(10, 110, 209, 0.22), transparent 28%),
+                    radial-gradient(circle at top right, rgba(93, 54, 199, 0.15), transparent 25%),
+                    linear-gradient(180deg, #f7fbff 0%, #edf4fb 48%, #eaf1f8 100%);
+        }
+
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            z-index: -1;
+            border-radius: 999px;
+            filter: blur(24px);
+            opacity: 0.55;
+        }
+
+        body::before {
+            width: 390px;
+            height: 390px;
+            top: 120px;
+            left: -140px;
+            background: rgba(10, 110, 209, 0.18);
+        }
+
+        body::after {
+            width: 420px;
+            height: 420px;
+            bottom: -120px;
+            right: -120px;
+            background: rgba(93, 54, 199, 0.14);
+        }
+
+        .page-shell {
+            max-width: 1420px;
+            margin: 0 auto;
+            padding: 34px 28px 70px;
+        }
+
+        /* =========================
+           HERO HEADER
+           ========================= */
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1.4fr 0.8fr;
+            gap: 28px;
+            padding: 38px;
+            border-radius: var(--radius-xl);
+            background:
+                    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(243, 249, 255, 0.92));
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(12px);
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            width: 390px;
+            height: 390px;
+            right: -145px;
+            top: -170px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(10, 110, 209, 0.25), transparent 70%);
+        }
+
+        .hero-copy,
+        .hero-metrics {
+            position: relative;
+            z-index: 1;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 18px;
+            padding: 9px 15px;
+            color: var(--primary-dark);
+            background: var(--primary-soft);
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--primary);
+            box-shadow: 0 0 0 6px rgba(10, 110, 209, 0.12);
+        }
+
+        .hero h1 {
+            margin: 0 0 18px;
+            max-width: 900px;
+            font-size: clamp(42px, 5vw, 70px);
+            line-height: 0.98;
+            letter-spacing: -0.055em;
+            color: #09294d;
+        }
+
+        .hero h1 span {
+            color: var(--primary);
+        }
+
+        .hero p {
+            max-width: 860px;
+            margin: 0;
+            color: var(--muted);
+            font-size: 18px;
+            line-height: 1.68;
+        }
+
+        .hero-metrics {
+            display: grid;
+            gap: 16px;
+            align-content: center;
+        }
+
+        .metric-card {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.84);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 22px;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .metric-card strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #082f58;
+            font-size: 28px;
+            letter-spacing: -0.03em;
+        }
+
+        .metric-card span {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        /* =========================
+           MAIN LAYOUT
+           ========================= */
+
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: minmax(420px, 0.95fr) minmax(520px, 1.15fr);
+            gap: 28px;
+            margin-top: 30px;
+            align-items: start;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.76);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(12px);
+        }
+
+        /* =========================
+           FORM PANEL
+           ========================= */
+
+        .form-panel {
+            position: sticky;
+            top: 24px;
+            padding: 30px;
+        }
+
+        .panel-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .panel-title {
+            margin: 0 0 10px;
+            color: #082f58;
+            font-size: 31px;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+        }
+
+        .panel-description {
+            margin: 0 0 25px;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .field {
+            padding: 17px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .field:focus-within {
+            transform: translateY(-2px);
+            border-color: rgba(10, 110, 209, 0.42);
+            box-shadow: 0 16px 30px rgba(10, 110, 209, 0.12);
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            color: #163b63;
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .label-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            color: var(--primary);
+            background: var(--primary-soft);
+            font-size: 13px;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            border: 1px solid rgba(148, 163, 184, 0.55);
+            border-radius: 15px;
+            padding: 14px 15px;
+            outline: none;
+            background: #fbfdff;
+            color: #102a43;
+            font-size: 15px;
+            line-height: 1.5;
+            font-family: inherit;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: var(--primary);
+            background: #ffffff;
+            box-shadow: 0 0 0 5px rgba(10, 110, 209, 0.12);
+        }
+
+        textarea {
+            min-height: 190px;
+            resize: vertical;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 14px;
+        }
+
+        .helper-text {
+            margin-top: 10px;
+            color: #6b7f94;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 13px;
+            margin-top: 24px;
+        }
+
+        button {
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .primary-btn,
+        .secondary-btn,
+        .ghost-btn {
+            min-height: 54px;
+            padding: 0 22px;
+            border-radius: 17px;
+            font-size: 15px;
+            font-weight: 900;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+        }
+
+        .primary-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 11px;
+            color: #ffffff;
+            background: linear-gradient(135deg, #0a6ed1, #085caf);
+            box-shadow: 0 18px 30px rgba(10, 110, 209, 0.24);
+        }
+
+        .primary-btn:hover,
+        .secondary-btn:hover,
+        .ghost-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .primary-btn:disabled {
+            cursor: wait;
+            opacity: 0.74;
+            transform: none;
+        }
+
+        .secondary-btn {
+            color: var(--primary-dark);
+            background: var(--primary-soft);
+            border: 1px solid rgba(10, 110, 209, 0.18);
+        }
+
+        .ghost-btn {
+            color: #42576d;
+            background: rgba(255, 255, 255, 0.84);
+            border: 1px solid var(--border);
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.45);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.85s linear infinite;
+            display: none;
+        }
+
+        .primary-btn.loading .spinner {
+            display: inline-block;
+        }
+
+        .loading-banner {
+            display: none;
+            margin-top: 18px;
+            padding: 15px 17px;
+            color: #064985;
+            background: #e8f3ff;
+            border: 1px solid rgba(10, 110, 209, 0.18);
+            border-radius: 18px;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.55;
+        }
+
+        .loading-banner.visible {
+            display: block;
+        }
+
+        /* =========================
+           RESULT PANEL
+           ========================= */
+
+        .result-panel {
+            min-height: 780px;
+            padding: 30px;
+        }
+
+        .empty-state {
+            min-height: 720px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .empty-card {
+            width: 100%;
+            padding: 42px;
+            border-radius: 28px;
+            background:
+                    radial-gradient(circle at top right, rgba(10, 110, 209, 0.16), transparent 34%),
+                    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(240, 247, 255, 0.94));
+            border: 1px dashed rgba(10, 110, 209, 0.3);
+            text-align: center;
+        }
+
+        .empty-orb {
+            width: 92px;
+            height: 92px;
+            margin: 0 auto 24px;
+            display: grid;
+            place-items: center;
+            border-radius: 30px;
+            color: white;
+            background: linear-gradient(135deg, #0a6ed1, #5d36c7);
+            box-shadow: 0 20px 48px rgba(10, 110, 209, 0.24);
+            font-size: 40px;
+        }
+
+        .empty-card h2 {
+            margin: 0 0 12px;
+            color: #082f58;
+            font-size: 32px;
+            letter-spacing: -0.03em;
+        }
+
+        .empty-card p {
+            max-width: 650px;
+            margin: 0 auto;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .report-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 22px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-radius: 26px;
+            background:
+                    radial-gradient(circle at right top, rgba(93, 54, 199, 0.13), transparent 32%),
+                    linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(238, 247, 255, 0.94));
+            border: 1px solid rgba(15, 23, 42, 0.08);
+        }
+
+        .report-heading-wrap {
+            display: flex;
+            gap: 18px;
+        }
+
+        .report-icon {
+            flex: 0 0 auto;
+            width: 64px;
+            height: 64px;
+            display: grid;
+            place-items: center;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #0a6ed1, #5d36c7);
+            color: #ffffff;
+            font-size: 29px;
+            box-shadow: 0 18px 35px rgba(10, 110, 209, 0.22);
+        }
+
+        .report-head h2 {
+            margin: 2px 0 7px;
+            color: #082f58;
+            font-size: 31px;
+            line-height: 1.1;
+            letter-spacing: -0.035em;
+        }
+
+        .report-head p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.55;
+        }
+
+        .badges {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .badge {
+            min-width: 120px;
+            padding: 12px 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .badge-label {
+            display: block;
+            margin-bottom: 4px;
+            color: #6b7f94;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .badge-value {
+            display: block;
+            color: #102a43;
+            font-size: 15px;
+            font-weight: 900;
+        }
+
+        .badge.category {
+            background: var(--primary-soft);
+        }
+
+        .badge.severity-high,
+        .badge.severity-critical {
+            background: var(--danger-soft);
+        }
+
+        .badge.severity-medium {
+            background: var(--warning-soft);
+        }
+
+        .badge.severity-low {
+            background: var(--success-soft);
+        }
+
+        .badge.confidence-high {
+            background: var(--success-soft);
+        }
+
+        .badge.confidence-medium {
+            background: var(--warning-soft);
+        }
+
+        .badge.confidence-low {
+            background: var(--danger-soft);
+        }
+
+        .diagnostic-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .diagnostic-card {
+            position: relative;
+            overflow: hidden;
+            padding: 24px;
+            border-radius: 25px;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .diagnostic-card::after {
+            content: "";
+            position: absolute;
+            right: -70px;
+            top: -70px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            opacity: 0.16;
+            background: var(--primary);
+        }
+
+        .diagnostic-card.full-span {
+            grid-column: 1 / -1;
+        }
+
+        .diagnostic-card.action-card {
+            background:
+                    radial-gradient(circle at right top, rgba(16, 126, 62, 0.14), transparent 35%),
+                    linear-gradient(135deg, #ffffff, #eefbf4);
+            border-color: rgba(16, 126, 62, 0.20);
+        }
+
+        .diagnostic-card.action-card::after {
+            background: var(--success);
+        }
+
+        .diagnostic-card.evidence-card {
+            background:
+                    radial-gradient(circle at right top, rgba(93, 54, 199, 0.13), transparent 35%),
+                    linear-gradient(135deg, #ffffff, #f6f2ff);
+        }
+
+        .diagnostic-card.evidence-card::after {
+            background: var(--violet);
+        }
+
+        .card-top {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 17px;
+        }
+
+        .card-number {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 auto;
+            display: grid;
+            place-items: center;
+            border-radius: 15px;
+            color: #ffffff;
+            background: linear-gradient(135deg, #0a6ed1, #074f9c);
+            font-size: 15px;
+            font-weight: 900;
+            box-shadow: 0 12px 25px rgba(10, 110, 209, 0.18);
+        }
+
+        .action-card .card-number {
+            background: linear-gradient(135deg, #107e3e, #0a5a2d);
+        }
+
+        .evidence-card .card-number {
+            background: linear-gradient(135deg, #5d36c7, #41208f);
+        }
+
+        .card-title {
+            margin: 0;
+            color: #082f58;
+            font-size: 21px;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 1;
+            color: #334e68;
+            font-size: 15px;
+            line-height: 1.72;
+        }
+
+        .card-content p {
+            margin: 0 0 13px;
+        }
+
+        .card-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .card-content strong {
+            color: #102a43;
+        }
+
+        .card-content code {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 8px;
+            color: #084b87;
+            background: #eaf3ff;
+            border: 1px solid rgba(10, 110, 209, 0.12);
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 13px;
+        }
+
+        .card-content ol,
+        .card-content ul {
+            margin: 10px 0 0;
+            padding-left: 23px;
+        }
+
+        .card-content li {
+            padding-left: 4px;
+            margin-bottom: 10px;
+        }
+
+        .card-content li:last-child {
+            margin-bottom: 0;
+        }
+
+        .error-banner {
+            margin-bottom: 24px;
+            padding: 20px;
+            border-radius: 22px;
+            color: #8a0000;
+            background: var(--danger-soft);
+            border: 1px solid rgba(187, 0, 0, 0.18);
+            font-weight: 800;
+            line-height: 1.6;
+        }
+
+        details.raw-response {
+            margin-top: 24px;
+            overflow: hidden;
+            border-radius: 22px;
+            border: 1px solid rgba(15, 23, 42, 0.10);
+            background: rgba(255, 255, 255, 0.88);
+        }
+
+        details.raw-response summary {
+            cursor: pointer;
+            padding: 18px 20px;
+            color: #163b63;
+            font-weight: 900;
+            list-style: none;
+        }
+
+        details.raw-response summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .raw-block {
+            margin: 0;
+            padding: 20px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            color: #263f59;
+            background: #f7fbff;
+            border-top: 1px solid rgba(15, 23, 42, 0.08);
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 13px;
+            line-height: 1.65;
+        }
+
+        /* =========================
+           RESPONSIVE
+           ========================= */
+
+        @media (max-width: 1180px) {
+            .hero,
+            .workspace-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-panel {
+                position: static;
+            }
+
+            .result-panel {
+                min-height: auto;
+            }
+
+            .empty-state {
+                min-height: 430px;
+            }
+        }
+
+        @media (max-width: 820px) {
+            .page-shell {
+                padding: 18px 14px 45px;
+            }
+
+            .hero,
+            .form-panel,
+            .result-panel {
+                padding: 22px;
+            }
+
+            .input-row,
+            .diagnostic-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .report-head {
+                flex-direction: column;
+            }
+
+            .badges {
+                justify-content: flex-start;
+            }
+
+            .hero h1 {
+                font-size: 42px;
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page-shell">
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-copy">
+            <div class="eyebrow">
+                <span class="eyebrow-dot"></span>
+                SAP GenAI Hub • Spring Boot MVP
+            </div>
+
+            <h1>
+                Integration Support <span>Copilot</span>
+            </h1>
+
+            <p>
+                Paste a real SAP Integration error, add system and business context,
+                and receive a structured troubleshooting report with root cause,
+                severity, confidence, next action, and evidence needed to confirm the fix.
+            </p>
+        </div>
+
+        <div class="hero-metrics">
+            <div class="metric-card">
+                <strong>5</strong>
+                <span>Context inputs sent to your SAP orchestration.</span>
+            </div>
+
+            <div class="metric-card">
+                <strong>9-part</strong>
+                <span>AI diagnostic report designed for support teams.</span>
+            </div>
+
+            <div class="metric-card">
+                <strong>API-powered</strong>
+                <span>Spring Boot calls your live SAP AI Core orchestration.</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN WORKSPACE -->
+    <section class="workspace-grid">
+
+        <!-- REQUEST FORM -->
+        <div class="panel form-panel">
+            <div class="panel-kicker">◆ Incident Input</div>
+            <h2 class="panel-title">Describe the integration failure</h2>
+            <p class="panel-description">
+                Give the Copilot enough context to behave less like a generic chatbot
+                and more like a real SAP Integration support analyst.
+            </p>
+
+            <form id="copilotForm"
+                  th:action="@{/analyze}"
+                  th:object="${copilotRequest}"
+                  method="post">
+
+                <div class="form-grid">
+
+                    <div class="input-row">
+                        <div class="field">
+                            <label for="sourceSystem">
+                                <span class="label-icon">S</span>
+                                Source System
+                            </label>
+                            <input id="sourceSystem"
+                                   type="text"
+                                   th:field="*{sourceSystem}"
+                                   placeholder="SAP Integration Suite - Cloud Integration">
+                        </div>
+
+                        <div class="field">
+                            <label for="targetSystem">
+                                <span class="label-icon">T</span>
+                                Target System
+                            </label>
+                            <input id="targetSystem"
+                                   type="text"
+                                   th:field="*{targetSystem}"
+                                   placeholder="External Partner SFTP Server">
+                        </div>
+                    </div>
+
+                    <div class="input-row">
+                        <div class="field">
+                            <label for="adapterProtocol">
+                                <span class="label-icon">A</span>
+                                Adapter / Protocol
+                            </label>
+                            <input id="adapterProtocol"
+                                   type="text"
+                                   th:field="*{adapterProtocol}"
+                                   placeholder="SFTP Receiver Adapter">
+                        </div>
+
+                        <div class="field">
+                            <label for="businessImpact">
+                                <span class="label-icon">B</span>
+                                Business Impact
+                            </label>
+                            <input id="businessImpact"
+                                   type="text"
+                                   th:field="*{businessImpact}"
+                                   placeholder="Order fulfillment may be delayed">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="integrationError">
+                            <span class="label-icon">!</span>
+                            Full Error Message
+                        </label>
+                        <textarea id="integrationError"
+                                  th:field="*{integrationError}"
+                                  placeholder="Paste the full CPI / APIM / OData / SFTP error message here..."></textarea>
+
+                        <div class="helper-text">
+                            Best results come from the exact runtime error, adapter exception,
+                            HTTP status, or MPL detail — not only a short summary.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <button id="analyzeButton" class="primary-btn" type="submit">
+                        <span class="spinner"></span>
+                        <span class="button-text">Analyze Error</span>
+                    </button>
+
+                    <button class="secondary-btn" type="button" onclick="loadDemoData()">
+                        Load SFTP Demo
+                    </button>
+
+                    <button class="ghost-btn" type="button" onclick="clearFormData()">
+                        Clear
+                    </button>
+                </div>
+
+                <div id="loadingBanner" class="loading-banner">
+                    Analyzing the incident through SAP AI Core orchestration.
+                    This may take a few seconds while the model generates the troubleshooting report.
+                </div>
+            </form>
+        </div>
+
+        <!-- RESULT AREA -->
+        <div class="panel result-panel">
+
+            <!-- ERROR BLOCK -->
+            <div class="error-banner"
+                 th:if="${copilotResponse != null and copilotResponse.error != null}"
+                 th:text="${copilotResponse.error}">
+            </div>
+
+            <!-- EMPTY STATE BEFORE FIRST ANALYSIS -->
+            <div class="empty-state"
+                 th:if="${copilotResponse == null}">
+                <div class="empty-card">
+                    <div class="empty-orb">✦</div>
+                    <h2>Your diagnostic report will appear here</h2>
+                    <p>
+                        Submit an error from the left panel and the Copilot will convert it into
+                        a polished support-ready analysis: category, severity, confidence,
+                        root cause, checks, recommended action, and confirmation evidence.
+                    </p>
+                </div>
+            </div>
+
+            <!-- PRETTY AI REPORT -->
+            <div id="reportArea"
+                 th:if="${copilotResponse != null and copilotResponse.answer != null}">
+
+                <div class="report-head">
+                    <div class="report-heading-wrap">
+                        <div class="report-icon">◎</div>
+                        <div>
+                            <h2>AI Diagnostic Report</h2>
+                            <p>
+                                Structured analysis generated from your SAP GenAI Hub orchestration.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="badges">
+                        <div class="badge category">
+                            <span class="badge-label">Category</span>
+                            <span id="categoryBadge" class="badge-value">—</span>
+                        </div>
+
+                        <div id="severityBadgeBox" class="badge">
+                            <span class="badge-label">Severity</span>
+                            <span id="severityBadge" class="badge-value">—</span>
+                        </div>
+
+                        <div id="confidenceBadgeBox" class="badge">
+                            <span class="badge-label">Confidence</span>
+                            <span id="confidenceBadge" class="badge-value">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="prettyResponse" class="diagnostic-grid"></div>
+
+                <details class="raw-response">
+                    <summary>View raw AI Markdown response</summary>
+                    <pre id="rawResponseVisible"
+                         class="raw-block"
+                         th:text="${copilotResponse.answer}"></pre>
+                </details>
+            </div>
+
+            <!-- HIDDEN RAW RESPONSE FOR JAVASCRIPT PARSING -->
+            <div id="rawAiResponse"
+                 th:if="${copilotResponse != null and copilotResponse.answer != null}"
+                 th:text="${copilotResponse.answer}"
+                 style="display:none;"></div>
+
+        </div>
+    </section>
+</div>
+
+<script>
+    const form = document.getElementById("copilotForm");
+    const analyzeButton = document.getElementById("analyzeButton");
+    const buttonText = analyzeButton ? analyzeButton.querySelector(".button-text") : null;
+    const loadingBanner = document.getElementById("loadingBanner");
+
+    if (form && analyzeButton) {
+        form.addEventListener("submit", function () {
+            analyzeButton.disabled = true;
+            analyzeButton.classList.add("loading");
+
+            if (buttonText) {
+                buttonText.textContent = "Analyzing...";
+            }
+
+            if (loadingBanner) {
+                loadingBanner.classList.add("visible");
+            }
+        });
+    }
+
+    function loadDemoData() {
+        document.getElementById("sourceSystem").value =
+            "SAP Integration Suite - Cloud Integration";
+
+        document.getElementById("targetSystem").value =
+            "External Partner SFTP Server";
+
+        document.getElementById("adapterProtocol").value =
+            "SFTP Receiver Adapter";
+
+        document.getElementById("businessImpact").value =
+            "Daily outbound order file is not reaching the logistics partner, so order fulfillment may be delayed.";
+
+        document.getElementById("integrationError").value =
+            "com.sap.it.rt.adapter.sftp.SftpException: Cannot store file. Permission denied while writing file ORD_1001.xml to directory /outbound/orders.";
+    }
+
+    function clearFormData() {
+        document.getElementById("sourceSystem").value = "";
+        document.getElementById("targetSystem").value = "";
+        document.getElementById("adapterProtocol").value = "";
+        document.getElementById("businessImpact").value = "";
+        document.getElementById("integrationError").value = "";
+    }
+
+    function escapeHtml(value) {
+        return value
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function inlineFormat(text) {
+        let safe = escapeHtml(text);
+
+        safe = safe.replace(/`([^`]+)`/g, "<code>$1</code>");
+        safe = safe.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+
+        return safe;
+    }
+
+    function renderMarkdownLite(markdown) {
+        const lines = markdown
+            .trim()
+            .split(/\r?\n/);
+
+        let html = "";
+        let orderedListOpen = false;
+        let unorderedListOpen = false;
+
+        function closeLists() {
+            if (orderedListOpen) {
+                html += "</ol>";
+                orderedListOpen = false;
+            }
+
+            if (unorderedListOpen) {
+                html += "</ul>";
+                unorderedListOpen = false;
+            }
+        }
+
+        lines.forEach(line => {
+            const trimmed = line.trim();
+
+            if (!trimmed) {
+                closeLists();
+                return;
+            }
+
+            if (/^\d+\.\s+/.test(trimmed)) {
+                if (unorderedListOpen) {
+                    html += "</ul>";
+                    unorderedListOpen = false;
+                }
+
+                if (!orderedListOpen) {
+                    html += "<ol>";
+                    orderedListOpen = true;
+                }
+
+                const item = trimmed.replace(/^\d+\.\s+/, "");
+                html += "<li>" + inlineFormat(item) + "</li>";
+                return;
+            }
+
+            if (/^-\s+/.test(trimmed)) {
+                if (orderedListOpen) {
+                    html += "</ol>";
+                    orderedListOpen = false;
+                }
+
+                if (!unorderedListOpen) {
+                    html += "<ul>";
+                    unorderedListOpen = true;
+                }
+
+                const item = trimmed.replace(/^-\s+/, "");
+                html += "<li>" + inlineFormat(item) + "</li>";
+                return;
+            }
+
+            closeLists();
+
+            if (trimmed === "---") {
+                return;
+            }
+
+            html += "<p>" + inlineFormat(trimmed) + "</p>";
+        });
+
+        closeLists();
+        return html;
+    }
+
+    function cleanOneLine(markdown) {
+        if (!markdown) {
+            return "—";
+        }
+
+        return markdown
+            .replaceAll("**", "")
+            .replaceAll("`", "")
+            .trim()
+            .split(/\r?\n/)[0]
+            .trim();
+    }
+
+    function parseSections(rawText) {
+        const sections = {};
+        const regex = /^###\s*(\d+)\.\s*(.+)$/gm;
+        const matches = [...rawText.matchAll(regex)];
+
+        matches.forEach((match, index) => {
+            const sectionNumber = match[1];
+            const sectionTitle = match[2].trim();
+
+            const start = match.index + match[0].length;
+            const end = index + 1 < matches.length
+                ? matches[index + 1].index
+                : rawText.length;
+
+            const body = rawText.substring(start, end).trim();
+
+            sections[sectionNumber] = {
+                number: sectionNumber,
+                title: sectionTitle,
+                body: body
+            };
+        });
+
+        return sections;
+    }
+
+    function getToneClass(value, type) {
+        const normalized = (value || "").toLowerCase();
+
+        if (type === "severity") {
+            if (normalized.includes("critical")) return "severity-critical";
+            if (normalized.includes("high")) return "severity-high";
+            if (normalized.includes("medium")) return "severity-medium";
+            if (normalized.includes("low")) return "severity-low";
+        }
+
+        if (type === "confidence") {
+            if (normalized.includes("high")) return "confidence-high";
+            if (normalized.includes("medium")) return "confidence-medium";
+            if (normalized.includes("low")) return "confidence-low";
+        }
+
+        return "";
+    }
+
+    function createCard(section, options = {}) {
+        const card = document.createElement("article");
+        card.className = "diagnostic-card";
+
+        if (options.fullSpan) {
+            card.classList.add("full-span");
+        }
+
+        if (options.action) {
+            card.classList.add("action-card");
+        }
+
+        if (options.evidence) {
+            card.classList.add("evidence-card");
+        }
+
+        card.innerHTML = `
+            <div class="card-top">
+                <div class="card-number">${section.number}</div>
+                <h3 class="card-title">${escapeHtml(section.title)}</h3>
+            </div>
+            <div class="card-content">
+                ${renderMarkdownLite(section.body)}
+            </div>
+        `;
+
+        return card;
+    }
+
+    function buildPrettyReport() {
+        const rawNode = document.getElementById("rawAiResponse");
+        const prettyResponse = document.getElementById("prettyResponse");
+
+        if (!rawNode || !prettyResponse) {
+            return;
+        }
+
+        const rawText = rawNode.textContent.trim();
+
+        if (!rawText) {
+            return;
+        }
+
+        const sections = parseSections(rawText);
+
+        const category = cleanOneLine(sections["1"]?.body);
+        const severity = cleanOneLine(sections["2"]?.body);
+        const confidence = cleanOneLine(sections["3"]?.body);
+
+        const categoryBadge = document.getElementById("categoryBadge");
+        const severityBadge = document.getElementById("severityBadge");
+        const confidenceBadge = document.getElementById("confidenceBadge");
+        const severityBadgeBox = document.getElementById("severityBadgeBox");
+        const confidenceBadgeBox = document.getElementById("confidenceBadgeBox");
+
+        if (categoryBadge) categoryBadge.textContent = category;
+        if (severityBadge) severityBadge.textContent = severity;
+        if (confidenceBadge) confidenceBadge.textContent = confidence;
+
+        if (severityBadgeBox) {
+            severityBadgeBox.classList.add(getToneClass(severity, "severity"));
+        }
+
+        if (confidenceBadgeBox) {
+            confidenceBadgeBox.classList.add(getToneClass(confidence, "confidence"));
+        }
+
+        const displayOrder = [
+            { key: "4", fullSpan: true },
+            { key: "5", fullSpan: false },
+            { key: "6", fullSpan: false },
+            { key: "7", fullSpan: true },
+            { key: "8", fullSpan: true, action: true },
+            { key: "9", fullSpan: true, evidence: true }
+        ];
+
+        displayOrder.forEach(config => {
+            const section = sections[config.key];
+
+            if (section) {
+                prettyResponse.appendChild(
+                    createCard(section, config)
+                );
+            }
+        });
+    }
+
+    buildPrettyReport();
+</script>
+
+</body>
+</html>
