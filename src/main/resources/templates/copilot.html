@@ -1713,7 +1713,18 @@
 
     function parseSections(rawText) {
         const sections = {};
-        const regex = /^###\s*(\d+)\.\s*(.+)$/gm;
+
+        /*
+         * Important fix:
+         * Claude sometimes returns:
+         * ## 1. Error Category
+         *
+         * Earlier UI expected only:
+         * ### 1. Error Category
+         *
+         * This regex now accepts both ## and ### headings.
+         */
+        const regex = /^#{2,3}\s*(\d+)\.\s*(.+)$/gm;
         const matches = [...rawText.matchAll(regex)];
 
         matches.forEach((match, index) => {
@@ -1798,6 +1809,8 @@
         if (!rawText) {
             return;
         }
+
+        prettyResponse.innerHTML = "";
 
         const sections = parseSections(rawText);
 
